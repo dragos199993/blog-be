@@ -7,14 +7,17 @@ import {
   Patch,
   Post as HttpPost,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { GetPostFilterDto } from './dto/get-post-filter.dto';
 import { UpdatePostStatusDto } from './dto/update-post-status.dto';
 import { Post } from './post.entity';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('posts')
+@UseGuards(AuthGuard())
 export class PostsController {
   constructor(private postsService: PostsService) {}
 
