@@ -1,37 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Post, PostStatus } from './post.model';
-import { v4 as uuid } from 'uuid';
 import { CreatePostDto } from './dto/create-post.dto';
-import { GetPostFilterDto } from './dto/get-post-filter.dto';
+import { PostRepository } from './post.repository';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Post } from './post.entity';
 import { UpdatePostStatusDto } from './dto/update-post-status.dto';
+import { GetPostFilterDto } from './dto/get-post-filter.dto';
 
 @Injectable()
 export class PostsService {
-  private posts: Post[] = [];
+  constructor(
+    @InjectRepository(PostRepository)
+    private postRepository: PostRepository,
+  ) {}
 
-  getAllPosts(): Post[] {
-    return this.posts;
-  }
-
-  getPostsWithFilters(filterDto: GetPostFilterDto): Post[] {
-    const { status, search } = filterDto;
-    let posts = this.getAllPosts();
-
-    if (status) {
-      posts = posts.filter((post) => post.status === status);
-    }
-
-    if (search) {
-      posts = posts.filter(
-        (post) => post.title.includes(search) || post.body.includes(search),
-      );
-    }
-
-    return posts;
-  }
-
-  getPostById(id: string): Post {
-    const post = this.posts.find((post) => post.id === id);
+  async getPostById(id: string): Promise<Post> {
+    const post = await this.postRepository.findOne(id);
 
     if (!post) {
       throw new NotFoundException();
@@ -40,29 +23,29 @@ export class PostsService {
     return post;
   }
 
-  deletePost(id: string): void {
-    this.getPostById(id);
-
-    this.posts = this.posts.filter((post) => post.id !== id);
+  createPost(createPostDto: CreatePostDto): Promise<Post> {
+    return this.postRepository.createPost(createPostDto);
   }
 
-  updatePostStatus(id: string, updatePostStatusDto: UpdatePostStatusDto): Post {
-    const post = this.getPostById(id);
+  async deletePost(id: string): Promise<void> {
+    const result = await this.postRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException();
+    }
+  }
+
+  getPosts(filterDto: GetPostFilterDto): Promise<Post[]> {
+    return this.postRepository.getPosts(filterDto);
+  }
+
+  async updatePostStatus(
+    id: string,
+    updatePostStatusDto: UpdatePostStatusDto,
+  ): Promise<Post> {
+    const post = await this.getPostById(id);
     post.status = updatePostStatusDto.status;
 
-    return post;
-  }
-
-  createPost(createPostDto: CreatePostDto): Post {
-    const { title, body } = createPostDto;
-    const post: Post = {
-      id: uuid(),
-      title,
-      body,
-      status: PostStatus.DRAFT,
-    };
-    this.posts.push(post);
-
-    return post;
+    return await this.postRepository.save(post);
   }
 }

@@ -9,36 +9,32 @@ import {
   Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
-import { Post } from './post.model';
 import { CreatePostDto } from './dto/create-post.dto';
 import { GetPostFilterDto } from './dto/get-post-filter.dto';
 import { UpdatePostStatusDto } from './dto/update-post-status.dto';
+import { Post } from './post.entity';
 
 @Controller('posts')
 export class PostsController {
   constructor(private postsService: PostsService) {}
 
   @Get()
-  getPosts(@Query() filterDto: GetPostFilterDto): Post[] {
-    if (Object.keys(filterDto).length) {
-      return this.postsService.getPostsWithFilters(filterDto);
-    }
-
-    return this.postsService.getAllPosts();
+  getPosts(@Query() filterDto: GetPostFilterDto): Promise<Post[]> {
+    return this.postsService.getPosts(filterDto);
   }
 
   @Get('/:id')
-  getPostById(@Param('id') id: string): Post {
+  getPostById(@Param('id') id: string): Promise<Post> {
     return this.postsService.getPostById(id);
   }
 
   @Delete('/:id')
-  deletePost(@Param('id') id: string): void {
+  deletePost(@Param('id') id: string): Promise<void> {
     return this.postsService.deletePost(id);
   }
 
   @HttpPost()
-  createPost(@Body() createPostDto: CreatePostDto): Post {
+  createPost(@Body() createPostDto: CreatePostDto): Promise<Post> {
     return this.postsService.createPost(createPostDto);
   }
 
@@ -46,7 +42,7 @@ export class PostsController {
   updatePostStatus(
     @Param('id') id: string,
     @Body() updatePostStatusDto: UpdatePostStatusDto,
-  ): Post {
+  ): Promise<Post> {
     return this.postsService.updatePostStatus(id, updatePostStatusDto);
   }
 }
