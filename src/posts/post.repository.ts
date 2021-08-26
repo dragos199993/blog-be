@@ -15,9 +15,12 @@ export class PostRepository extends Repository<Post> {
     }
 
     if (search) {
-      query.andWhere('post.title LIKE :search OR post.body LIKE :search', {
-        search: `%${search}%`,
-      });
+      query.andWhere(
+        'LOWER(post.title) LIKE LOWER(:search) OR LOWER(post.body) LIKE LOWER(:search)',
+        {
+          search: `%${search}%`,
+        },
+      );
     }
 
     return await query.getMany();
